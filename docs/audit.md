@@ -11,19 +11,25 @@ This document describes the data model and audit trail implementation in AI E-Si
 │    User     │────<│  Document   │────<│    Field    │
 └─────────────┘     └─────────────┘     └─────────────┘
        │                   │                   │
-       │                   │                   │
+       │                   │                   │ role_id
        ▼                   ▼                   │
-┌─────────────┐     ┌─────────────┐           │
-│  Envelope   │────<│  Recipient  │           │
-└─────────────┘     └─────────────┘           │
-       │                                       │
-       │                                       │
-       ├──────────────────────────────────────┘
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Envelope   │────<│    Role     │<────│    Field    │
+└─────────────┘     └─────────────┘     └─────────────┘
        │                   │
+       │                   │ role_id
        ▼                   ▼
 ┌─────────────┐     ┌─────────────┐
-│ FieldValue  │     │ AuditEvent  │
+│  Recipient  │────>│    Role     │
 └─────────────┘     └─────────────┘
+       │
+       ├──────────────────────────────────────┐
+       │                   │                   │
+       ▼                   ▼                   ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ FieldValue  │     │ AuditEvent  │     │    Role     │
+└─────────────┘     └─────────────┘     │(filled_by)  │
+                                        └─────────────┘
 ```
 
 ### User
@@ -58,6 +64,19 @@ Represents an uploaded PDF document.
 | extracted_text | Text? | Full text content |
 | text_layout | JSON? | Text positions and layout |
 
+### Role (N-Signer Support)
+
+Represents a signer role for an envelope. Enables N-signer workflows.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | UUID | Primary key |
+| envelope_id | UUID | Foreign key to Envelope |
+| key | String | Role identifier (e.g., "client", "landlord") |
+| display_name | String | Human-readable name (e.g., "Client") |
+| color | String | Hex color for UI (e.g., "#3B82F6") |
+| signing_order | Integer? | Order for sequential signing (null = no enforcement) |
+
 ### Field
 
 Represents a form field on a document.
@@ -70,7 +89,11 @@ Represents a form field on a document.
 | bbox_x, bbox_y | Float | Position in PDF coordinates |
 | bbox_width, bbox_height | Float | Size in PDF coordinates |
 | field_type | Enum | TEXT, NAME, EMAIL, DATE_SIGNED, CHECKBOX, SIGNATURE, INITIALS |
-| owner | Enum | SENDER, SIGNER_1, SIGNER_2 |
+| owner | Enum? | DEPRECATED: SENDER, SIGNER_1, SIGNER_2 |
+| assignee_type | Enum | SENDER or ROLE (new N-signer model) |
+| role_id | UUID? | Foreign key to Role (when assignee_type=ROLE) |
+| detected_role_key | String? | Inferred role from detection (e.g., "client") |
+| role_confidence | Float? | 0.0-1.0 role inference confidence |
 | required | Boolean | Must be filled |
 | label | String? | Internal label |
 | placeholder | String? | Placeholder text |
@@ -112,13 +135,16 @@ Represents a signing party.
 | envelope_id | UUID | Foreign key to Envelope |
 | email | String | Recipient email |
 | name | String | Recipient name |
-| role | Enum | SIGNER_1, SIGNER_2 |
-| order | Integer | Signing order |
+| role | Enum? | DEPRECATED: SIGNER_1, SIGNER_2 |
+| role_id | UUID? | Foreign key to Role (N-signer support) |
+| order | Integer | Legacy signing order |
 | status | Enum | PENDING, SENT, VIEWED, SIGNING, COMPLETED, DECLINED |
 | signing_token | String? | Unique signing link token |
 | sent_at | DateTime? | When email sent |
 | viewed_at | DateTime? | First view time |
 | completed_at | DateTime? | Signing completion time |
+
+**Note:** The `role_id` links to the Role table, enabling semantic role assignment (e.g., "client", "landlord") instead of hardcoded SIGNER_1/SIGNER_2.
 
 ### FieldValue
 

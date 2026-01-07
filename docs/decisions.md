@@ -134,9 +134,9 @@ Implement blockchain-like hash chain:
 
 ---
 
-## ADR-007: Field Owner Model (Sender + 2 Signers)
+## ADR-007: Field Owner Model (Sender + 2 Signers) - SUPERSEDED
 
-**Status:** Accepted
+**Status:** Superseded by ADR-011
 
 **Context:**
 Need to assign fields to different parties. Many real contracts have multiple signers.
@@ -153,6 +153,8 @@ Design allows extension to N signers in future.
 - Covers most common contract scenarios
 - Sender variables enable dynamic content without templates
 - Owner inference more challenging with multiple parties
+
+**Note:** This ADR has been superseded by ADR-011 which introduces N-signer support.
 
 ---
 
@@ -221,11 +223,58 @@ Need to include dynamic values (effective date, amounts) set at send-time withou
 
 ---
 
+## ADR-011: N-Signer Support with Role-Based Field Assignment
+
+**Status:** Accepted
+
+**Context:**
+The original MVP was limited to 2 signers (SIGNER_1, SIGNER_2). Real-world contracts often require more signers (e.g., buyer, seller, agent, witness, guarantor). The hardcoded enum was a limitation.
+
+**Decision:**
+Implement a generalized role-based system:
+
+1. **New Data Model:**
+   - `AssigneeType` enum: SENDER or ROLE
+   - `Role` table: (id, envelope_id, key, display_name, color, signing_order)
+   - Fields reference roles via `role_id` instead of hardcoded owner enum
+   - Recipients link to roles via `role_id`
+
+2. **Detection Pipeline Changes:**
+   - Replace SIGNER_1_KEYWORDS/SIGNER_2_KEYWORDS with ROLE_KEYWORDS dict
+   - Output `detected_role_key` (e.g., "client", "landlord", "guarantor")
+   - New anchor tag format: `[sig|role:client]`
+   - Maintain backward compatibility for `[sig|signer1]` format
+
+3. **Signing Order Enforcement:**
+   - `signing_order` on roles (nullable, 1-indexed)
+   - Earlier signers must complete before later signers can sign
+   - No enforcement when signing_order is null
+
+4. **API Changes:**
+   - Envelopes accept `roles[]` array at creation
+   - Recipients reference roles via `role_key`
+   - Signing session includes role info
+
+**Consequences:**
+- Supports arbitrary number of signers (tested with 1, 2, 5)
+- Semantic role keys improve document understanding
+- Signing order enables sequential workflows
+- Backward compatible with existing documents
+- Role mapping UI needed at send time
+- More flexible field-recipient matching
+
+**Migration:**
+- Old `owner` field kept for backward compatibility
+- SIGNER_1 → signer_1 role, SIGNER_2 → signer_2 role
+- New documents use role_id exclusively
+
+---
+
 ## Future Considerations
 
 ### Potential ADRs for Next Phase:
-- ADR-011: LLM Integration for Classification
-- ADR-012: Queue/Worker Architecture for Heavy Processing
-- ADR-013: S3/Cloud Storage Backend
-- ADR-014: Webhook Notifications
-- ADR-015: Multi-tenancy and Organizations
+- ADR-012: LLM Integration for Classification
+- ADR-013: Queue/Worker Architecture for Heavy Processing
+- ADR-014: S3/Cloud Storage Backend
+- ADR-015: Webhook Notifications
+- ADR-016: Multi-tenancy and Organizations

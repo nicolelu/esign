@@ -608,6 +608,138 @@ def create_partnership_agreement(output_path: Path):
     doc.build(story)
 
 
+def create_loan_agreement(output_path: Path):
+    """Create a Loan Agreement with 3 signers: borrower, lender, guarantor."""
+    doc = SimpleDocTemplate(str(output_path), pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, alignment=1)
+    story.append(Paragraph("LOAN AGREEMENT", title_style))
+    story.append(Spacer(1, 15))
+
+    story.append(Paragraph(
+        "This Loan Agreement is entered into as of {{agreement_date}} by and among:",
+        styles['Normal']
+    ))
+    story.append(Spacer(1, 15))
+
+    # Loan terms
+    story.append(Paragraph("<b>LOAN TERMS</b>", styles['Heading2']))
+    story.append(Paragraph("Loan Amount: $______________________________", styles['Normal']))
+    story.append(Paragraph("Interest Rate: _____________________________", styles['Normal']))
+    story.append(Paragraph("Term (months): _____________________________", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    # Borrower
+    story.append(Paragraph("<b>BORROWER</b>", styles['Heading2']))
+    story.append(Paragraph("Borrower Name: _____________________________", styles['Normal']))
+    story.append(Paragraph("Borrower Address: __________________________", styles['Normal']))
+    story.append(Paragraph("Borrower Email: ____________________________", styles['Normal']))
+    story.append(Spacer(1, 10))
+
+    # Lender
+    story.append(Paragraph("<b>LENDER</b>", styles['Heading2']))
+    story.append(Paragraph("Lender Name: _______________________________", styles['Normal']))
+    story.append(Paragraph("Lender Address: ____________________________", styles['Normal']))
+    story.append(Paragraph("Lender Email: ______________________________", styles['Normal']))
+    story.append(Spacer(1, 10))
+
+    # Guarantor
+    story.append(Paragraph("<b>GUARANTOR</b>", styles['Heading2']))
+    story.append(Paragraph("Guarantor Name: ____________________________", styles['Normal']))
+    story.append(Paragraph("Guarantor Address: _________________________", styles['Normal']))
+    story.append(Paragraph("Guarantor Email: ___________________________", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    # Acknowledgements
+    story.append(Paragraph("[ ] Borrower agrees to the loan terms", styles['Normal']))
+    story.append(Paragraph("[ ] Guarantor agrees to guarantee repayment", styles['Normal']))
+    story.append(Spacer(1, 20))
+
+    # Signatures
+    story.append(Paragraph("<b>BORROWER SIGNATURE</b>", styles['Normal']))
+    story.append(Paragraph("Signature: _________________________________", styles['Normal']))
+    story.append(Paragraph("Date: ______________________________________", styles['Normal']))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph("<b>LENDER SIGNATURE</b>", styles['Normal']))
+    story.append(Paragraph("Signature: _________________________________", styles['Normal']))
+    story.append(Paragraph("Date: ______________________________________", styles['Normal']))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph("<b>GUARANTOR SIGNATURE</b>", styles['Normal']))
+    story.append(Paragraph("Signature: _________________________________", styles['Normal']))
+    story.append(Paragraph("Date: ______________________________________", styles['Normal']))
+
+    doc.build(story)
+
+
+def create_real_estate_contract(output_path: Path):
+    """Create a Real Estate Contract with 5 signers using new anchor tag format."""
+    doc = SimpleDocTemplate(str(output_path), pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = []
+
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=14, alignment=1)
+    story.append(Paragraph("REAL ESTATE PURCHASE CONTRACT", title_style))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph(
+        "Contract Date: {{contract_date}}",
+        styles['Normal']
+    ))
+    story.append(Paragraph("Property Address: {{property_address}}", styles['Normal']))
+    story.append(Paragraph("Purchase Price: ${{purchase_price}}", styles['Normal']))
+    story.append(Spacer(1, 10))
+
+    # Buyer
+    story.append(Paragraph("<b>BUYER</b>", styles['Heading2']))
+    story.append(Paragraph("Buyer Name: ________________________________", styles['Normal']))
+    story.append(Paragraph("Buyer Email: _______________________________", styles['Normal']))
+    story.append(Spacer(1, 8))
+
+    # Seller
+    story.append(Paragraph("<b>SELLER</b>", styles['Heading2']))
+    story.append(Paragraph("Seller Name: _______________________________", styles['Normal']))
+    story.append(Paragraph("Seller Email: ______________________________", styles['Normal']))
+    story.append(Spacer(1, 8))
+
+    # Buyer's Agent
+    story.append(Paragraph("<b>BUYER'S AGENT</b>", styles['Heading2']))
+    story.append(Paragraph("Agent Name: ________________________________", styles['Normal']))
+    story.append(Paragraph("License #: _________________________________", styles['Normal']))
+    story.append(Spacer(1, 8))
+
+    # Seller's Agent
+    story.append(Paragraph("<b>SELLER'S AGENT</b>", styles['Heading2']))
+    story.append(Paragraph("Agent Name: ________________________________", styles['Normal']))
+    story.append(Paragraph("License #: _________________________________", styles['Normal']))
+    story.append(Spacer(1, 8))
+
+    # Escrow Officer
+    story.append(Paragraph("<b>ESCROW OFFICER</b>", styles['Heading2']))
+    story.append(Paragraph("Officer Name: ______________________________", styles['Normal']))
+    story.append(Paragraph("Escrow Company: ____________________________", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    # Signature section with new anchor tag format
+    story.append(Paragraph("<b>SIGNATURES</b>", styles['Heading2']))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph("Buyer: [sig|role:buyer] Date: [date|role:buyer]", styles['Normal']))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("Seller: [sig|role:seller] Date: [date|role:seller]", styles['Normal']))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("Buyer Agent: [sig|role:buyer_agent] Date: [date|role:buyer_agent]", styles['Normal']))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("Seller Agent: [sig|role:seller_agent] Date: [date|role:seller_agent]", styles['Normal']))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("Escrow: [sig|role:escrow] Date: [date|role:escrow]", styles['Normal']))
+
+    doc.build(story)
+
+
 def main():
     """Generate all sample documents."""
     output_dir = Path(__file__).parent.parent / "sample_docs"
@@ -624,6 +756,9 @@ def main():
         ("08_release_waiver.pdf", create_release_waiver),
         ("09_power_of_attorney.pdf", create_power_of_attorney),
         ("10_partnership_agreement.pdf", create_partnership_agreement),
+        # NEW: N-signer documents (3+ signers)
+        ("11_loan_agreement.pdf", create_loan_agreement),  # 3 signers: borrower, lender, guarantor
+        ("12_real_estate_contract.pdf", create_real_estate_contract),  # 5 signers using anchor tags
     ]
 
     print(f"Generating {len(documents)} sample documents...")

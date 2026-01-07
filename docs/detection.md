@@ -66,21 +66,27 @@ The field detection system uses a **hybrid approach** combining multiple strateg
 
 ### 4. Anchor Tag Detection
 
-**What it finds:** Explicit field markers in format `[type|role]`
+**What it finds:** Explicit field markers with role assignment
 
 **How it works:**
-1. Search text for pattern `\[(\w+)\|(\w+)\]`
-2. Parse field type and role from groups
+1. Search text for anchor tag patterns
+2. Parse field type and role from tag
 3. Position field at tag location
 4. Remove tag text (optional in final render)
 
-**Supported tags:**
-- `[sig|signer1]` - Signature for Signer 1
-- `[date|signer2]` - Date for Signer 2
-- `[name|sender]` - Name (sender-filled)
-- `[email|signer1]` - Email for Signer 1
-- `[check|signer1]` - Checkbox for Signer 1
-- `[init|signer2]` - Initials for Signer 2
+**New Format (N-signer support):**
+- `[sig|role:client]` - Signature for client role
+- `[date|role:contractor]` - Date for contractor role
+- `[name|role:landlord]` - Name for landlord role
+- `[email|role:buyer]` - Email for buyer role
+- `[check|role:tenant]` - Checkbox for tenant role
+- `[init|role:guarantor]` - Initials for guarantor role
+- `[text|sender]` - Text for sender
+
+**Legacy Format (backward compatible):**
+- `[sig|signer1]` → Interpreted as first signer role
+- `[date|signer2]` → Interpreted as second signer role
+- These are mapped to `signer_1` and `signer_2` role keys
 
 ### 5. Sender Variable Detection
 
@@ -91,19 +97,32 @@ The field detection system uses a **hybrid approach** combining multiple strateg
 2. Create TEXT field owned by SENDER
 3. Variable key stored for send-time merge
 
-## Owner Inference
+## Role Inference (N-Signer Support)
 
-Determining which party should fill a field is challenging. The system uses contextual keywords:
+The detection system now infers semantic role keys instead of hardcoded SIGNER_1/SIGNER_2. This enables support for any number of signers.
 
-**Signer 1 indicators:**
-- client, employee, contractor, tenant, buyer
-- recipient, party a, first party, borrower
+**Role Keywords:**
 
-**Signer 2 indicators:**
-- company, employer, landlord, seller
-- provider, party b, second party, lender
+| Role Key | Keywords |
+|----------|----------|
+| client | client, customer, buyer, purchaser, party a |
+| contractor | contractor, employee, worker, consultant |
+| company | company, employer, seller, vendor, party b |
+| landlord | landlord, owner, lessor |
+| tenant | tenant, renter, lessee |
+| witness | witness |
+| guarantor | guarantor, co-signer, cosigner |
+| borrower | borrower |
+| lender | lender |
 
-**Default:** If no indicator found, defaults to SIGNER_1
+**Detection Output:**
+- `assignee_type`: "SENDER" or "ROLE"
+- `detected_role_key`: Inferred role (e.g., "client", "landlord")
+- `role_confidence`: Confidence in the role inference (0.0-1.0)
+
+**Default:** If no role indicator found, defaults to "signer" role key
+
+**Legacy Compatibility:** SIGNER_1 maps to client-like roles, SIGNER_2 to company-like roles
 
 ## Confidence Scores
 

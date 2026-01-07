@@ -52,6 +52,7 @@ router = APIRouter(prefix="/signing", tags=["signing"])
 async def get_recipient_from_token(
     signing_token: str,
     db: AsyncSession,
+    check_signing_order: bool = True,
 ) -> tuple[Recipient, Envelope]:
     """Verify signing token and return recipient and envelope."""
     payload = verify_signing_token(signing_token)
@@ -114,7 +115,70 @@ async def get_recipient_from_token(
             detail="You have already completed signing",
         )
 
+    # Check signing order enforcement
+    if check_signing_order:
+        await _check_signing_order(recipient, envelope, db)
+
     return recipient, envelope
+
+
+async def _check_signing_order(
+    recipient: Recipient,
+    envelope: Envelope,
+    db: AsyncSession,
+) -> None:
+    """
+    Check if signing order allows this recipient to sign.
+
+    If signing_order is set on roles, earlier signers must complete
+    before later signers can sign.
+    """
+    # Get recipient's role and signing order
+    if not recipient.role_ref or recipient.role_ref.signing_order is None:
+        # No signing order enforcement for this recipient
+        return
+
+    my_order = recipient.role_ref.signing_order
+
+    # Get all roles with signing_order < my_order
+    result = await db.execute(
+        select(Role)
+        .where(
+            Role.envelope_id == envelope.id,
+            Role.signing_order.isnot(None),
+            Role.signing_order < my_order,
+        )
+    )
+    earlier_roles = result.scalars().all()
+
+    if not earlier_roles:
+        # No earlier signers to wait for
+        return
+
+    # Get all recipients for earlier roles
+    earlier_role_ids = [r.id for r in earlier_roles]
+    result = await db.execute(
+        select(Recipient)
+        .where(
+            Recipient.envelope_id == envelope.id,
+            Recipient.role_id.in_(earlier_role_ids),
+        )
+    )
+    earlier_recipients = result.scalars().all()
+
+    # Check if all earlier recipients have completed
+    incomplete_signers = [
+        r for r in earlier_recipients
+        if r.status != RecipientStatus.COMPLETED
+    ]
+
+    if incomplete_signers:
+        # Build message about who needs to sign first
+        waiting_for = ", ".join([r.name for r in incomplete_signers])
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Signing order required. Waiting for: {waiting_for}",
+        )
 
 
 def _field_belongs_to_recipient(field: Field, recipient: Recipient) -> bool:
