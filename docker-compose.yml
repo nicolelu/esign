@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./esign.db
+      - STORAGE_PATH=/app/storage
+      - DEBUG=true
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - SIGNING_LINK_BASE_URL=http://localhost:3000
+    volumes:
+      - ./apps/backend:/app
+      - backend-storage:/app/storage
+    depends_on:
+      - postgres
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    command: npm run dev
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=esign
+      - POSTGRES_PASSWORD=esign_password
+      - POSTGRES_DB=esign
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  backend-storage:
+  postgres-data:
